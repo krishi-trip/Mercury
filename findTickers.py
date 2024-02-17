@@ -1,26 +1,23 @@
-import loginInfo as info
-import mysql.connector
 import pandas as pd
+import csv
 
-mydb = mysql.connector.connect(
-  host=info.hostname,
-  user=info.username,
-  password=info.password,
-  database="company",
-)
-
-mycursor = mydb.cursor()
+headers = ['TickerName']
+companies = []
 
 pd.set_option('expand_frame_repr', False)
 pd.set_option("display.max_rows", None, "display.max_columns", None)
 
 payload=pd.read_html('https://en.wikipedia.org/wiki/Nasdaq-100')
 df = payload[4]
-for i in range(len(df)):
+
+for i in range(100):
     ticker = df.loc[i, 'Ticker']
+    companies.append([ticker])
 
-    sql = "INSERT INTO ticker (tName) VALUES (%s)"
-    val = [ticker]
-    mycursor.execute(sql, val)
-
-mydb.commit()
+with open('data/tickerNames.csv', 'w') as f:
+     
+    # using csv.writer method from CSV package
+    write = csv.writer(f)
+     
+    write.writerow(headers)
+    write.writerows(companies)

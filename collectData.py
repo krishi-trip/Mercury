@@ -1,43 +1,30 @@
-import loginInfo as info
-import mysql.connector
 import yfinance as yf
 import pandas as pd
+import csv
 
-mydb = mysql.connector.connect(
-  host=info.hostname,
-  user=info.username,
-  password=info.password,
-  database="company",
-)
+data = pd.read_csv("data/tickerNames.csv")
+# tickers = data['TickerName'].tolist()
+tickers = data['TickerName'].tolist()[:3]
 
-mycursor = mydb.cursor()
-
-mycursor.execute("SELECT * FROM ticker")
-
-tickers = mycursor.fetchall()
+headers = ['Ticker', 'Date', 'Close', 'Bin']
+values = []
 
 for ticker in tickers:
     stock = yf.Ticker(ticker[0])
 
-    hist = stock.history(interval="1d", period="1mo")
+    hist = stock.history(interval="1wk", period="1y")
     important = hist.loc[:, "Close"]
     important = important.reset_index()
     important['Date'] = pd.to_datetime(important['Date']).dt.date
     # print(important)
     for i in range(important.shape[0]):
-        sql = "INSERT INTO priceData (tName, close_date, price) VALUES (%s, %s, %s)"
-        val = (ticker[0], important.at[i, 'Date'], important.at[i, 'Close'])
-        # print(val)
-        try:
-            mycursor.execute(sql, val)
-        except:
-            print("Error for ", val)
+        val = [ticker, important.at[i, 'Date'], important.at[i, 'Close'], 0]
+        values.append(val)
 
-mydb.commit()
-
-mycursor.execute("SELECT * FROM article")
-
-myresult = mycursor.fetchall()
-
-# for x in myresult:
-#   print(x)
+with open('data/stockData.csv', 'w') as f:
+     
+    # using csv.writer method from CSV package
+    write = csv.writer(f)
+     
+    write.writerow(headers)
+    write.writerows(values)

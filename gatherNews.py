@@ -3,6 +3,8 @@
 # CUSTOME SEARCH API: https://developers.google.com/custom-search/v1/site_restricted_api
 
 import datetime
+import pandas as pd
+import csv
 from googleapiclient.discovery import build
 
 # Google Custom Search Engine (CSE) API key
@@ -17,25 +19,26 @@ def get_top_news(api_key, cse_id, query):
     res = service.cse().list(q=query, cx=cse_id, num=5).execute()
     return res.get('items', [])
 
+data = pd.read_csv("data/tickerNames.csv")
+
 # List of NASDAQ-100 stocks
-nasdaq_100_stocks = [
-    'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'GOOG', 'FB', 'TSLA', 'NVDA', 'PYPL', 'INTC',
-    'CMCSA', 'ADBE', 'NFLX', 'PEP', 'CSCO', 'AVGO', 'TMUS', 'TXN', 'QCOM', 'AMD',
-    'COST', 'ABBV', 'BKNG', 'CHTR', 'MDLZ', 'INTU', 'ISRG', 'AMGN', 'GILD', 'LRCX',
-    'WBA', 'MU', 'FISV', 'ADP', 'REGN', 'VRTX', 'ATVI', 'ILMN', 'CSX', 'ADI', 'ZM',
-    'ADI', 'ADSK', 'MELI', 'KLAC', 'DXCM', 'DOCU', 'LULU', 'EBAY', 'MRNA', 'AEP'
-]
+nasdaq_100_stocks = data['TickerName'].tolist()[:2]
+
+headers = ['TickerName', 'Week', 'Index', 'NewsTitle', 'NewsLink']
+values = []
 
 # Define start and end dates
 start_date = datetime.date(2018, 1, 1)
-end_date = datetime.date(2018, 12, 31)
+end_date = datetime.date(2018, 2, 20)
+# end_date = datetime.date(2018, 12, 31)
 #end_date = datetime.date(2023, 12, 31)
 
 # Iterate over weeks from start_date to end_date
 current_date = start_date
 while current_date <= end_date:
     # Print current week's date range
-    print(f"Week of {current_date} to {current_date + datetime.timedelta(days=6)}")
+    end_date = current_date + datetime.timedelta(days=6)
+    week = "From {currDate} to {endDate}".format(currDate=current_date, endDate=end_date)
     
     # Iterate over each stock
     for stock in nasdaq_100_stocks:
@@ -46,10 +49,17 @@ while current_date <= end_date:
         top_news = get_top_news(API_KEY, CSE_ID, query)
         
         # Print the top news stories for the stock
-        print(f"{stock}:")
         for idx, news in enumerate(top_news, 1):
-            print(f"{idx}. {news['title']} - {news['link']}")
-        print()
+            row = [stock, week, idx, news['title'], news['link']]
+            values.append(row)
     
     # Move to the next week
     current_date += datetime.timedelta(days=7)
+
+with open('data/newsData.csv', 'w') as f:
+     
+    # using csv.writer method from CSV package
+    write = csv.writer(f)
+     
+    write.writerow(headers)
+    write.writerows(values)
