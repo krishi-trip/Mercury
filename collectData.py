@@ -16,14 +16,12 @@ for ticker in tickers:
     important = hist.loc[:, "Close"]
     important = important.reset_index()
     important['Date'] = pd.to_datetime(important['Date']).dt.date
-    # print(important)
+
     for i in range(important.shape[0]):
         val = [ticker, important.at[i, 'Date'], important.at[i, 'Close'], 0]
         values.append(val)
 
 with open('data/stockData.csv', 'w') as f:
-     
-    # using csv.writer method from CSV package
     write = csv.writer(f)
      
     write.writerow(headers)

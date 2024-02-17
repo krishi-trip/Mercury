@@ -15,8 +15,6 @@ for i in range(100):
     companies.append([ticker])
 
 with open('data/tickerNames.csv', 'w') as f:
-     
-    # using csv.writer method from CSV package
     write = csv.writer(f)
      
     write.writerow(headers)

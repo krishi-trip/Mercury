@@ -6,9 +6,10 @@ import datetime
 import pandas as pd
 import csv
 from googleapiclient.discovery import build
+import loginInfo as info
 
 # Google Custom Search Engine (CSE) API key
-API_KEY = 'AIzaSyBuwLuv50KVCdl3M7byw3rBpaqypSaoCxk'
+API_KEY = info.google_api_key
 
 # Define the CSE ID for news search
 CSE_ID = '103bcbd9dec5e45e1'
