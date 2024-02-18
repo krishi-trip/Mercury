@@ -64,9 +64,17 @@ while current_date <= end_date:
         #Retrieve the top news stories for the query
         top_news = get_top_news(query, current_date.strftime("%Y-%m-%d"), (current_date + datetime.timedelta(days=6)).strftime("%Y-%m-%d"))
 
+        count = 0
         for entry in top_news['entries']:
+            if (count > 5):
+                count = 0
+                break
+
+            count += 1
+
             link = entry['links'][0]['href']
             title = entry['title']
+            
             row = [stock, week, title, link]
             values.append(row)
 
