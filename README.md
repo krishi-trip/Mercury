@@ -6,7 +6,7 @@
 ---
 
 <h1 align="center">
-<strong>Project Title</strong>
+<strong>Mercury</strong>
 </h1>
 
 <p align="center">
