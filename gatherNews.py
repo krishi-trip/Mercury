@@ -1,89 +1,82 @@
-# API KEY: https://developers.google.com/custom-search/v1/overview
-# SEARCH ENGINE CONSOLE: https://programmablesearchengine.google.com/controlpanel/all
-# CUSTOME SEARCH API: https://developers.google.com/custom-search/v1/site_restricted_api
-
-import datetime
-import pandas as pd
-import csv
-from googleapiclient.discovery import build
-import loginInfo as info
-from tqdm import tqdm
-from newspaper import Article
+from pygooglenews import GoogleNews
 import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import tqdm
+import datetime
+import csv
 
-# Google Custom Search Engine (CSE) API key
-API_KEY = info.google_api_key
+#query = 'MSFT top news'
+#search = gn.search('MSFT top news', helper = True, from_ = '2022-01-01', to_ = '2022-01-07')
+#search = gn.search(query, helper = True, when = None, from_ = '2018-01-01', to_ = '2018-01-07', proxies=None, scraping_bee=None)
 
-# Define the CSE ID for news search
-CSE_ID = '103bcbd9dec5e45e1'
+# for i in range(0, 1):
+#     print(i, search['entries'][i]['title'])
+#     print(i, search['entries'][i]['links'][0]['href'])
 
-# Function to retrieve top news stories for a given query
-def get_top_news(api_key, cse_id, query):
-    service = build('customsearch', 'v1', developerKey=api_key)
-    res = service.cse().list(q=query, cx=cse_id, num=5).execute()
-    return res.get('items', [])
+gn = GoogleNews(lang = 'en', country = 'US')
 
-# Function to extract article content from URL using newspaper3k
+def get_top_news(query, from_, to_):
+    search = gn.search(query, helper = True, when = None, from_ = from_, to_ = to_, proxies=None, scraping_bee=None)
+    return search
+
 def extract_article_content(url):
     try:
-        article = Article(url)
-        article.download()
-        article.parse()
-        return article.text
+        # Send a GET request to the URL
+        response = requests.get(url)
+        # Check if the request was successful
+        if response.status_code == 200:
+            # Parse the HTML content of the page
+            soup = BeautifulSoup(response.text, 'html.parser')
+            # Extract the text content
+            text_content = soup.get_text()
+            return text_content
+        else:
+            print("Failed to retrieve content. Status code:", response.status_code)
+            return None
     except Exception as e:
-        print(f"Error extracting content from {url}: {e}")
+        print("An error occurred:", str(e))
         return None
 
+#Import the data from the csv
 data = pd.read_csv("data/tickerNames.csv")
 
 # List of NASDAQ-100 stocks
 nasdaq_100_stocks = data['TickerName'].tolist()[:2]
 pbar = tqdm(nasdaq_100_stocks)
 
-headers = ['TickerName', 'Week', 'Index', 'NewsTitle', 'NewsLink']
+headers = ['TickerName', 'Week', 'NewsTitle', 'NewsLink']
 values = []
 
-# Define start and end dates
 start_date = datetime.date(2018, 1, 1)
-end_date = datetime.date(2018, 2, 20)
-# end_date = datetime.date(2018, 12, 31)
-#end_date = datetime.date(2023, 12, 31)
+end_date = datetime.date(2018, 1, 14)
 
-# Iterate over weeks from start_date to end_date
 current_date = start_date
+
 while current_date <= end_date:
-    # Print current week's date range
-    end_date = current_date + datetime.timedelta(days=6)
-    week = "From {currDate} to {endDate}".format(currDate=current_date, endDate=end_date)
-    
-    # Iterate over each stock
+    #Print the current week's date range
+    week = "From {currDate} to {currEnd}".format(currDate = current_date, currEnd = current_date + datetime.timedelta(days=6))
+
     for stock in pbar:
-        # Construct query for the stock's top news
+        #Construct the query for the stock's top news
         query = f"{stock} stock news"
-        
-        # Retrieve top news stories for the query
-        top_news = get_top_news(API_KEY, CSE_ID, query)
-        
-        # Print the top news stories for the stock
-        for idx, news in enumerate(top_news, 1):
-            link = news['link']
-            row = [stock, week, idx, news['title'], link]
+
+        #Retrieve the top news stories for the query
+        top_news = get_top_news(query, current_date.strftime("%Y-%m-%d"), (current_date + datetime.timedelta(days=6)).strftime("%Y-%m-%d"))
+
+        for entry in top_news['entries']:
+            link = entry['links'][0]['href']
+            title = entry['title']
+            row = [stock, week, title, link]
             values.append(row)
 
-            #Extract content of the article
             content = extract_article_content(link)
-            
+
             if content:
-                # Print the content of the article
-                print(f"Content: {content}\n")
-                # Save the title, link, and content to a file
-                with open(f"{stock}_news.txt", 'a', encoding='utf-8') as file:
-                    file.write(f"Title: {title}\n")
-                    file.write(f"Link: {link}\n")
-                    file.write(f"Content: {content}\n\n")
+                print(content)
+
         print()
-    
-    # Move to the next week
+
     current_date += datetime.timedelta(days=7)
 
 with open('data/newsData.csv', 'w') as f:
