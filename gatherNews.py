@@ -8,6 +8,8 @@ import csv
 from googleapiclient.discovery import build
 import loginInfo as info
 from tqdm import tqdm
+from newspaper import Article
+import requests
 
 # Google Custom Search Engine (CSE) API key
 API_KEY = info.google_api_key
@@ -20,6 +22,17 @@ def get_top_news(api_key, cse_id, query):
     service = build('customsearch', 'v1', developerKey=api_key)
     res = service.cse().list(q=query, cx=cse_id, num=5).execute()
     return res.get('items', [])
+
+# Function to extract article content from URL using newspaper3k
+def extract_article_content(url):
+    try:
+        article = Article(url)
+        article.download()
+        article.parse()
+        return article.text
+    except Exception as e:
+        print(f"Error extracting content from {url}: {e}")
+        return None
 
 data = pd.read_csv("data/tickerNames.csv")
 
@@ -53,8 +66,22 @@ while current_date <= end_date:
         
         # Print the top news stories for the stock
         for idx, news in enumerate(top_news, 1):
-            row = [stock, week, idx, news['title'], news['link']]
+            link = news['link']
+            row = [stock, week, idx, news['title'], link]
             values.append(row)
+
+            #Extract content of the article
+            content = extract_article_content(link)
+            
+            if content:
+                # Print the content of the article
+                print(f"Content: {content}\n")
+                # Save the title, link, and content to a file
+                with open(f"{stock}_news.txt", 'a', encoding='utf-8') as file:
+                    file.write(f"Title: {title}\n")
+                    file.write(f"Link: {link}\n")
+                    file.write(f"Content: {content}\n\n")
+        print()
     
     # Move to the next week
     current_date += datetime.timedelta(days=7)
