@@ -1,43 +1,62 @@
-import loginInfo as info
-import mysql.connector
+from os import close
 import yfinance as yf
 import pandas as pd
+import csv
+from tqdm import tqdm
+import warnings
 
-mydb = mysql.connector.connect(
-  host=info.hostname,
-  user=info.username,
-  password=info.password,
-  database="company",
-)
+warnings.simplefilter(action="ignore", category=FutureWarning)
 
-mycursor = mydb.cursor()
+def calculateBin(prevClose, currClose):
+    percent_change = 100 * (currClose - prevClose) / prevClose
+    ret = ""
+    if percent_change < 0:
+        ret = ret + "D"
+    else:
+        ret = ret + "U"
 
-mycursor.execute("SELECT * FROM ticker")
+    if abs(percent_change) > 5:
+        ret = ret + "5+"
+    elif abs(percent_change) > 4:
+        ret = ret + "5"
+    elif abs(percent_change) > 3:
+        ret = ret + "4"
+    elif abs(percent_change) > 2:
+        ret = ret + "3"
+    elif abs(percent_change) > 1:
+        ret = ret + "2"
+    else:
+        ret = ret + "1"
+    return ret
 
-tickers = mycursor.fetchall()
+data = pd.read_csv("data/tickerNames.csv")
+# tickers = data['TickerName'].tolist()
+pbar = tqdm(data['TickerName'].tolist())
 
-for ticker in tickers:
+headers = ['Ticker', 'Date', 'Close', 'Bin']
+values = []
+
+for ticker in pbar:
     stock = yf.Ticker(ticker[0])
 
-    hist = stock.history(interval="1d", period="1mo")
+    hist = stock.history(start="2018-01-01", interval="1wk", period="1y")
     important = hist.loc[:, "Close"]
     important = important.reset_index()
     important['Date'] = pd.to_datetime(important['Date']).dt.date
-    # print(important)
+
     for i in range(important.shape[0]):
-        sql = "INSERT INTO priceData (tName, close_date, price) VALUES (%s, %s, %s)"
-        val = (ticker[0], important.at[i, 'Date'], important.at[i, 'Close'])
-        # print(val)
-        try:
-            mycursor.execute(sql, val)
-        except:
-            print("Error for ", val)
+        closePrice = important.at[i, 'Close']
+        bin = "NA" 
+        if i > 0:
+            prevPrice = important.at[i - 1, 'Close']
+            bin = calculateBin(prevPrice, closePrice)
+        val = [ticker, important.at[i, 'Date'], closePrice, bin]
+        values.append(val)
 
-mydb.commit()
+with open('data/stockData.csv', 'w') as f:
+    write = csv.writer(f)
+     
+    write.writerow(headers)
+    write.writerows(values)
 
-mycursor.execute("SELECT * FROM article")
-
-myresult = mycursor.fetchall()
-
-# for x in myresult:
-#   print(x)
+print("Completed")
