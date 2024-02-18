@@ -22,7 +22,7 @@
 
 <p align="center">
 <!--     <img alt="Mangal 4 TUI" src="assets/tui.gif"> -->
-    <img alt="Mercury" src="assets/mercury.png" width="1100">
+    <img alt="Mercury" src="assets/mercury.png" width="800">
 </p>
 
 
