@@ -7,6 +7,7 @@ import pandas as pd
 import csv
 from googleapiclient.discovery import build
 import loginInfo as info
+from tqdm import tqdm
 
 # Google Custom Search Engine (CSE) API key
 API_KEY = info.google_api_key
@@ -24,6 +25,7 @@ data = pd.read_csv("data/tickerNames.csv")
 
 # List of NASDAQ-100 stocks
 nasdaq_100_stocks = data['TickerName'].tolist()[:2]
+pbar = tqdm(nasdaq_100_stocks)
 
 headers = ['TickerName', 'Week', 'Index', 'NewsTitle', 'NewsLink']
 values = []
@@ -42,7 +44,7 @@ while current_date <= end_date:
     week = "From {currDate} to {endDate}".format(currDate=current_date, endDate=end_date)
     
     # Iterate over each stock
-    for stock in nasdaq_100_stocks:
+    for stock in pbar:
         # Construct query for the stock's top news
         query = f"{stock} stock news"
         
@@ -64,3 +66,5 @@ with open('data/newsData.csv', 'w') as f:
      
     write.writerow(headers)
     write.writerows(values)
+
+print("Completed")

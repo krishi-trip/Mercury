@@ -25,3 +25,4 @@ response = model.generate_text(
 )
 
 print(response.result)
+print(prompts.get_forcasting_prompt())
