@@ -2,7 +2,7 @@ from pygooglenews import GoogleNews
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-import tqdm
+from tqdm import tqdm
 import datetime
 import csv
 
@@ -45,17 +45,18 @@ data = pd.read_csv("data/tickerNames.csv")
 nasdaq_100_stocks = data['TickerName'].tolist()[:2]
 pbar = tqdm(nasdaq_100_stocks)
 
-headers = ['TickerName', 'Week', 'NewsTitle', 'NewsLink']
+headers = ['TickerName', 'Week', 'NewsTitle', 'NewsLink', 'Content']
 values = []
 
 start_date = datetime.date(2018, 1, 1)
-end_date = datetime.date(2018, 1, 14)
+end_date = datetime.date(2018, 5, 30)
 
 current_date = start_date
 
 while current_date <= end_date:
     #Print the current week's date range
-    week = "From {currDate} to {currEnd}".format(currDate = current_date, currEnd = current_date + datetime.timedelta(days=6))
+    # week = "From {currDate} to {currEnd}".format(currDate = current_date, currEnd = current_date + datetime.timedelta(days=6))
+    week = str(current_date)
 
     for stock in pbar:
         #Construct the query for the stock's top news
@@ -75,15 +76,10 @@ while current_date <= end_date:
             link = entry['links'][0]['href']
             title = entry['title']
             
-            row = [stock, week, title, link]
-            values.append(row)
-
             content = extract_article_content(link)
 
-            if content:
-                print(content)
-
-        print()
+            row = [stock, week, title, link, content]
+            values.append(row)
 
     current_date += datetime.timedelta(days=7)
 

@@ -31,7 +31,7 @@ def calculateBin(prevClose, currClose):
 
 data = pd.read_csv("data/tickerNames.csv")
 # tickers = data['TickerName'].tolist()
-pbar = tqdm(data['TickerName'].tolist())
+pbar = tqdm(data['TickerName'].tolist()[:10])
 
 headers = ['Ticker', 'Date', 'Close', 'Bin']
 values = []
@@ -50,7 +50,7 @@ for ticker in pbar:
         if i > 0:
             prevPrice = important.at[i - 1, 'Close']
             bin = calculateBin(prevPrice, closePrice)
-        val = [ticker, important.at[i, 'Date'], closePrice, bin]
+        val = [ticker, str(important.at[i, 'Date']), closePrice, bin]
         values.append(val)
 
 with open('data/stockData.csv', 'w') as f:
