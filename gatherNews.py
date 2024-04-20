@@ -2,7 +2,7 @@ from pygooglenews import GoogleNews
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-import tqdm
+from tqdm import tqdm
 import datetime
 import csv
 
@@ -32,28 +32,29 @@ def extract_article_content(url):
             text_content = soup.get_text()
             return text_content
         else:
-            print("Failed to retrieve content. Status code:", response.status_code)
+            #print("Failed to retrieve content. Status code:", response.status_code)
             return None
     except Exception as e:
-        print("An error occurred:", str(e))
+        #print("An error occurred:", str(e))
         return None
 
 #Import the data from the csv
 data = pd.read_csv("data/tickerNames.csv")
 
 # List of NASDAQ-100 stocks
-nasdaq_100_stocks = data['TickerName'].tolist()[:2]
+# nasdaq_100_stocks = data['TickerName'].tolist()[:2]
+nasdaq_100_stocks = data['TickerName'].tolist()[0:]
 pbar = tqdm(nasdaq_100_stocks)
 
 headers = ['TickerName', 'Week', 'NewsTitle', 'NewsLink']
 values = []
 
 start_date = datetime.date(2018, 1, 1)
-end_date = datetime.date(2018, 1, 14)
+end_date = datetime.date(2018, 1, 7)
 
 current_date = start_date
 
-while current_date <= end_date:
+while current_date < end_date:
     #Print the current week's date range
     week = "From {currDate} to {currEnd}".format(currDate = current_date, currEnd = current_date + datetime.timedelta(days=6))
 
@@ -66,7 +67,8 @@ while current_date <= end_date:
 
         count = 0
         for entry in top_news['entries']:
-            if (count > 5):
+            # Need to set actual count to 5
+            if (count >= 1):
                 count = 0
                 break
 
@@ -80,12 +82,14 @@ while current_date <= end_date:
 
             content = extract_article_content(link)
 
-            if content:
-                print(content)
+            #if content:
+                #print(content)
 
         print()
 
     current_date += datetime.timedelta(days=7)
+
+print("Finished")
 
 with open('data/newsData.csv', 'w') as f:
      
